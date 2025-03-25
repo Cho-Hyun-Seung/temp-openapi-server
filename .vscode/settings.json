@@ -1,5 +1,12 @@
 {
     "python.analysis.extraPaths": [
         "./app/open-api"
-    ]
+    ],
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.formatOnPaste": true,
+        "editor.defaultFormatter": "ms-python.python",
+    }
+    
 }

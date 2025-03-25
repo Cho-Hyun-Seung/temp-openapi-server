@@ -7,7 +7,7 @@ from core import config
 
 from openapi.getMuseum import get_museum_data  
 
-app = FastAPI()
+app = FastAPI(swagger_ui_parameters={"syntaxHighlight":True})
 
 @lru_cache
 def get_settings():
@@ -18,10 +18,6 @@ def get_settings():
 def read_root():
     return {"Hello": "world12"}
 
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
 
 @app.get("/museum")
 async def get_museum(
