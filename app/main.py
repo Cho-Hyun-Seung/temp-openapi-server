@@ -1,7 +1,7 @@
 from typing import Union
 import uvicorn
 from functools import lru_cache
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from typing_extensions import Annotated
 from core import config
 
@@ -21,15 +21,16 @@ def read_root():
 
 @app.get("/museum")
 async def get_museum(
+    numOfRows:int =  Query(3, description="한번에 받아올 박물관 개수"),
     settings: config.Settings = Depends(get_settings)
 ):
-    # try:
-    museums = await get_museum_data(settings)
-    print(len(museums))
-    return museums
-    # except Exception as e:
-    #     print()
-    #     raise HTTPException(status_code=500, detail=str(e))
+    try:
+        museums = await get_museum_data(numOfRows, settings)
+        print(len(museums))
+        return museums
+    except Exception as e:
+        print()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # main 함수에서 환경 설정 값을 사용
 def main():

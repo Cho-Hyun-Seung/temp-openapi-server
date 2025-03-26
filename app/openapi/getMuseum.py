@@ -6,13 +6,13 @@ from urllib.parse import unquote
 import datetime as dt
 
 
-async def get_museum_data(settings:Settings):
+async def get_museum_data(numOfRows:int, settings:Settings):
     api_key = unquote(settings.OPEN_API_KEY)
     url = "http://apis.data.go.kr/B551011/KorService1/areaBasedSyncList1"
     params = {
         "serviceKey": api_key,
         "pageNo": 1,
-        "numOfRows" : 3,
+        "numOfRows" : numOfRows,
         "MobileOS": "ETC",
         "MobileApp" : "GulHan",
         "contentTypeId" : 14,
