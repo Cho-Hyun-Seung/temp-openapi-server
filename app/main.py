@@ -34,7 +34,7 @@ async def get_museum(
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/region")
-async def get_area_data(
+async def get_region(
     settings: config.Settings = Depends(get_settings)
 ):
     try:
