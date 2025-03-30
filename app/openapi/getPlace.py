@@ -6,7 +6,7 @@ from urllib.parse import unquote
 import datetime as dt
 
 
-async def get_museum_data(numOfRows:int, settings:Settings):
+async def get_place_data(numOfRows:int,contentTypeId:int, cat2:str, cat3:str,settings:Settings):
     api_key = unquote(settings.OPEN_API_KEY)
     url = "http://apis.data.go.kr/B551011/KorService1/areaBasedSyncList1"
     params = {
@@ -15,11 +15,11 @@ async def get_museum_data(numOfRows:int, settings:Settings):
         "numOfRows" : numOfRows,
         "MobileOS": "ETC",
         "MobileApp" : "GulHan",
-        "contentTypeId" : 14,
+        "contentTypeId" : contentTypeId,
         "_type" : "json",        # 응답 타입
         "cat1": "A02",
-        "cat2" : "A0206",
-        "cat3" : "A02060100"
+        "cat2" : cat2,
+        "cat3" : cat3
     }
     result = []
 
@@ -32,18 +32,18 @@ async def get_museum_data(numOfRows:int, settings:Settings):
                 item_list = data.get("response", {}).get("body",{}).get("items",{}).get("item",{})
                 if item_list:
                    for item in item_list:
-                       museum_data = {
+                       place_data = {
                           "title": item.get("title","No Title"),
                             "first_image": item.get("firstimage", ""),
                             "addr1": item.get("addr1", "No Address"),
                             "addr2":item.get("addr2"),
                             "content_id": item.get("contentid", None),
                        }
-                       museum_detail = await get_museum_detail(museum_data.get("content_id"), settings)
-                       museum_overview = await get_museum_overview(museum_data.get("content_id"), settings)
-                       museum_data.update(museum_detail)
-                       museum_data.update(museum_overview)
-                       result.append(museum_data)
+                       place_detail = await get_place_detail(place_data.get("content_id"),contentTypeId ,settings)
+                       place_overview = await get_place_overview(place_data.get("content_id"), settings)
+                       place_data.update(place_detail)
+                       place_data.update(place_overview)
+                       result.append(place_data)
                 else:
                     raise HTTPException(status_code=404, detail="Item not found in the response")  # 아이템이 없을 경우
                 return result
@@ -53,7 +53,7 @@ async def get_museum_data(numOfRows:int, settings:Settings):
     except asyncio.TimeoutError:
         raise HTTPException(status_code=408, detail="Request timed out") 
     
-async def get_museum_detail(contentId: str, settings:Settings):
+async def get_place_detail(contentId: str, contentTypeId:int, settings:Settings):
     api_key = unquote(settings.OPEN_API_KEY)
     url = "http://apis.data.go.kr/B551011/KorService1/detailIntro1"
     params = {
@@ -62,7 +62,7 @@ async def get_museum_detail(contentId: str, settings:Settings):
         "numOfRows" : 100,
         "MobileOS": "ETC",
         "MobileApp" : "GulHan",
-        "contentTypeId" : 14,
+        "contentTypeId" : contentTypeId,
         "contentId" : contentId,
         "_type" : "json",        # 응답 타입
     }
@@ -73,19 +73,27 @@ async def get_museum_detail(contentId: str, settings:Settings):
                 response.raise_for_status()
                 data = await response.json()
                 item = data.get("response", {}).get("body",{}).get("items",{}).get("item",{})[0]
-                museum_detail_data = {
-                    "discount_info": item.get("discountinfo",""),   # 할인 정보
-                    "use_fee" : item.get("usefee",""),   # 이용 요금
-                    "rest_date" : item.get("restdateculture", "") # 쉬는 날날
-                }
-                return museum_detail_data
+                place_detail_data = {}
+                if contentTypeId == 14:
+                    place_detail_data = {
+                        "discount_info": item.get("discountinfo",""),   # 할인 정보
+                        "use_fee" : item.get("usefee",""),   # 이용 요금
+                        "rest_date" : item.get("restdateculture", "") # 쉬는 날
+                    }
+                else:
+                    place_detail_data = {
+                        "rest_date": item.get("restdate",""),   # 쉬는 날
+                    }
+
+
+                return place_detail_data
     except aiohttp.ClientError as e:
         raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")  # 예외 처리
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=408, detail="Request timed out") 
-    
+        raise HTTPException(status_code=408, detail="Request timed out")
 
-async def get_museum_overview(contentId, settings:Settings):
+
+async def get_place_overview(contentId, settings:Settings):
     api_key = unquote(settings.OPEN_API_KEY)
     url = "http://apis.data.go.kr/B551011/KorService1/detailCommon1"
     params = {
@@ -113,10 +121,10 @@ async def get_museum_overview(contentId, settings:Settings):
                 response.raise_for_status()
                 data = await response.json()
                 item = data.get("response", {}).get("body",{}).get("items",{}).get("item",{})[0]
-                museum_overview = {
+                place_overview = {
                     "overview": item.get("overview",""),   # 개요
                 }
-                return museum_overview
+                return place_overview
     except aiohttp.ClientError as e:
         raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")  # 예외 처리
     except asyncio.TimeoutError:
